@@ -1,7 +1,11 @@
 import React from "react";
 import { Phone, Search, MapPin, Building2, ShieldCheck, Mail } from "lucide-react";
 
-export default function Footer() {
+interface FooterProps {
+  onOpenAdmin: () => void;
+}
+
+export default function Footer({ onOpenAdmin }: FooterProps) {
   return (
     <footer className="bg-gray-950 text-gray-400 py-16 border-t border-white/10 relative overflow-hidden select-none">
       
@@ -122,10 +126,16 @@ export default function Footer() {
             <p className="text-[10px] sm:text-xs">
               © 2026 하수 누수 명탐정 (Sewer Leak Detective) All Rights Reserved.
             </p>
-            <div className="flex gap-4 text-[10px]">
+            <div className="flex gap-4 text-[10px] items-center">
               <a href="#" className="hover:text-white transition-colors">이용약관</a>
               <a href="#" className="hover:text-white transition-colors">개인정보처리방침</a>
               <a href="#" className="hover:text-white transition-colors">책임의한계와 법적고지</a>
+              <button
+                onClick={(e) => { e.preventDefault(); onOpenAdmin(); }}
+                className="hover:text-blue-300 text-blue-500 font-extrabold transition-colors cursor-pointer flex items-center gap-0.5"
+              >
+                🔐 관리자모드
+              </button>
             </div>
           </div>
         </div>

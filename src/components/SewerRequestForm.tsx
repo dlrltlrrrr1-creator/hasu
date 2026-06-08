@@ -43,8 +43,8 @@ export default function SewerRequestForm() {
   const [calculatedPrice, setCalculatedPrice] = useState(50000);
   const [showProgress, setShowProgress] = useState<string | null>(null);
 
-  // Load history from localStorage
-  useEffect(() => {
+  // Load history from localStorage and listen to updates
+  const loadHistoryData = () => {
     const saved = localStorage.getItem("estimations_detective");
     if (saved) {
       try {
@@ -52,7 +52,22 @@ export default function SewerRequestForm() {
       } catch (e) {
         console.error(e);
       }
+    } else {
+      setHistory([]);
     }
+  };
+
+  useEffect(() => {
+    loadHistoryData();
+
+    const handleUpdate = () => {
+      loadHistoryData();
+    };
+
+    window.addEventListener("detective_data_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("detective_data_updated", handleUpdate);
+    };
   }, []);
 
   // Sync pricing automatically

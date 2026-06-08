@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Header from "./components/Header";
 import Hero from "./components/Hero";
 import SewerRequestForm from "./components/SewerRequestForm";
@@ -7,8 +7,11 @@ import PlumbingEquipment from "./components/PlumbingEquipment";
 import ReviewsQnA from "./components/ReviewsQnA";
 import Footer from "./components/Footer";
 import FloatingActions from "./components/FloatingActions";
+import AdminModal from "./components/AdminModal";
 
 export default function App() {
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+
   const handleScrollTo = (elementId: string) => {
     const element = document.getElementById(elementId);
     if (element) {
@@ -27,7 +30,7 @@ export default function App() {
     <div className="font-sans min-h-screen flex flex-col bg-white text-gray-900 antialiased selection:bg-blue-600 selection:text-white">
       
       {/* Dynamic Header section */}
-      <Header onScrollTo={handleScrollTo} />
+      <Header onScrollTo={handleScrollTo} onOpenAdmin={() => setIsAdminOpen(true)} />
 
       <main className="flex-grow">
         
@@ -49,10 +52,13 @@ export default function App() {
       </main>
 
       {/* Trustable direct footer */}
-      <Footer />
+      <Footer onOpenAdmin={() => setIsAdminOpen(true)} />
 
       {/* Scroll-followed Quick Action Widgets */}
-      <FloatingActions />
+      <FloatingActions onOpenAdmin={() => setIsAdminOpen(true)} />
+
+      {/* 스마트 관리자 포털 모달 */}
+      <AdminModal isOpen={isAdminOpen} onClose={() => setIsAdminOpen(false)} />
 
     </div>
   );

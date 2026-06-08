@@ -16,7 +16,11 @@ export default function ReviewsQnA() {
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   // Q&A states
-  const [qnaList, setQnaList] = useState<QnAItem[]>([
+  const [qnaList, setQnaList] = useState<QnAItem[]>([]);
+  const [newQuestion, setNewQuestion] = useState("");
+  const [newQnaAuthor, setNewQnaAuthor] = useState("");
+
+  const DEFAULT_QNAS: QnAItem[] = [
     {
       id: "qna-1",
       author: "김태* (서울 서초구)",
@@ -24,13 +28,19 @@ export default function ReviewsQnA() {
       answer: "네! 보일러 분배기는 부식되거나 밸브 고무 가스켓이 낡으면 미세 누수의 요인이 됩니다. 최신 열화상 카메라를 지참하고 당일 즉각 방문해 세밀 진단 후 필요 시 밸브 크기에 맞춰 당일 전격 부분 수리 혹은 통째 교체 성심껏 해결해 드리겠습니다.",
       date: "2026-06-07T12:00:00Z",
       isLocked: false
+    },
+    {
+      id: "qna-2",
+      author: "박민* (경기 분당구)",
+      question: "화장실 아래층 천장에 얼룩이 커져요. 누수 매립 탐지 가능한가요?",
+      answer: "당연히 가능합니다! 청음식과 가스 감지 정밀 장비를 동원해서 벽이나 누수 진원지를 정확히 짚어내고 불필요한 굴착 없이 그 자리만 완벽하게 핀포인트 시공해 드립니다.",
+      date: "2026-06-08T02:00:00Z",
+      isLocked: false
     }
-  ]);
-  const [newQuestion, setNewQuestion] = useState("");
-  const [newQnaAuthor, setNewQnaAuthor] = useState("");
+  ];
 
-  useEffect(() => {
-    // Sync reviews from localStorage
+  const loadDataFromStorage = () => {
+    // 1. Reviews
     const savedReviews = localStorage.getItem("reviews_detective");
     if (savedReviews) {
       try {
@@ -42,6 +52,33 @@ export default function ReviewsQnA() {
       setReviews(INITIAL_REVIEWS);
       localStorage.setItem("reviews_detective", JSON.stringify(INITIAL_REVIEWS));
     }
+
+    // 2. QnA List
+    const savedQnas = localStorage.getItem("qna_detective");
+    if (savedQnas) {
+      try {
+        setQnaList(JSON.parse(savedQnas));
+      } catch (e) {
+        setQnaList(DEFAULT_QNAS);
+      }
+    } else {
+      setQnaList(DEFAULT_QNAS);
+      localStorage.setItem("qna_detective", JSON.stringify(DEFAULT_QNAS));
+    }
+  };
+
+  useEffect(() => {
+    loadDataFromStorage();
+
+    // Listen for custom event updates from the AdminModal
+    const handleUpdate = () => {
+      loadDataFromStorage();
+    };
+
+    window.addEventListener("detective_data_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("detective_data_updated", handleUpdate);
+    };
   }, []);
 
   const handleAddReview = (e: React.FormEvent) => {
@@ -88,7 +125,10 @@ export default function ReviewsQnA() {
       isLocked: false
     };
 
-    setQnaList([item, ...qnaList]);
+    const updated = [item, ...qnaList];
+    setQnaList(updated);
+    localStorage.setItem("qna_detective", JSON.stringify(updated));
+
     setNewQnaAuthor("");
     setNewQuestion("");
     alert("기술 문의 질문이 전수 등록되었습니다. 사장님이 확인 후 성심을 다해 유선 연락 올리겠습니다.");

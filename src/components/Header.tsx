@@ -3,9 +3,10 @@ import { Phone, Search, Zap, CheckCircle2, ShieldCheck, MapPin } from "lucide-re
 
 interface HeaderProps {
   onScrollTo: (elementId: string) => void;
+  onOpenAdmin: () => void;
 }
 
-export default function Header({ onScrollTo }: HeaderProps) {
+export default function Header({ onScrollTo, onOpenAdmin }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState("services");
 
@@ -88,7 +89,16 @@ export default function Header({ onScrollTo }: HeaderProps) {
           </nav>
 
           {/* Direct Call & Quick Contact Badge */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            {/* Subtle Admin Trigger Key */}
+            <button
+              onClick={onOpenAdmin}
+              className="p-2 border border-blue-100 hover:border-blue-200 bg-blue-50/50 hover:bg-blue-50 text-blue-600 rounded-full transition-colors cursor-pointer flex items-center justify-center"
+              title="관리자 스마트 모드"
+            >
+              <ShieldCheck className="w-5 h-5" />
+            </button>
+
             <a
               href="tel:010-7777-7745"
               id="cta_header_phone"
