@@ -1,0 +1,6 @@
+{
+  "name": "하수 누수 명탐정",
+  "description": "서울·경기 전지역 30분~1시간 이내 로켓 방문! 하수구·변기·싱크대 막힘 해결부터 누수 일체, 최신장비 고압세척까지 한방에 완벽히 해결하는 하수 누수 명탐정입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
