@@ -1,9 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { WORK_SERVICES } from "../data";
 import { Camera, Search, HelpCircle, Eye, Hammer, ChevronRight, Sparkles } from "lucide-react";
+import { ServiceItem } from "../types";
 
 export default function ServicesSection() {
-  const [selectedService, setSelectedService] = useState<typeof WORK_SERVICES[0] | null>(null);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+
+  const loadServices = () => {
+    const saved = localStorage.getItem("work_services_detective");
+    if (saved) {
+      try {
+        setServices(JSON.parse(saved));
+      } catch (e) {
+        setServices(WORK_SERVICES);
+      }
+    } else {
+      setServices(WORK_SERVICES);
+      localStorage.setItem("work_services_detective", JSON.stringify(WORK_SERVICES));
+    }
+  };
+
+  useEffect(() => {
+    loadServices();
+
+    const handleUpdate = () => {
+      loadServices();
+    };
+
+    window.addEventListener("detective_data_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("detective_data_updated", handleUpdate);
+    };
+  }, []);
 
   return (
     <section id="services" className="py-16 md:py-24 bg-gray-50 scroll-mt-12">
@@ -19,14 +48,14 @@ export default function ServicesSection() {
             명탐정 정밀 진단 <span className="text-blue-600">작업 갤러리</span>
           </h3>
           <p className="text-sm sm:text-base text-gray-600 font-medium mt-3 leading-relaxed">
-            단순히 뚫는 신늉을 하는 것이 아닌, 첨단 장비를 사용해 막힘의 근본 원인을 투명하게 찾아 드립니다. <br />
+            단순히 뚫는 시늉을 하는 것이 아닌, 첨단 장비를 사용해 막힘의 근본 원인을 투명하게 찾아 드립니다. <br />
             아래의 각 전문 분야 리스트를 누르시면 디테일한 기술 소견과 장비 정보를 볼 수 있습니다.
           </p>
         </div>
 
         {/* Dynamic Interactive Service Grid list */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {WORK_SERVICES.map((s) => (
+          {services.map((s) => (
             <div
               key={s.id}
               onClick={() => setSelectedService(s)}

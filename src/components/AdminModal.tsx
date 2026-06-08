@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { X, ShieldCheck, Lock, Phone, MessageSquare, Clipboard, Trash2, CheckCircle, RefreshCcw, LogOut, CheckSquare, PlusCircle } from "lucide-react";
-import { EstimateRequest, ReviewItem, QnAItem } from "../types";
+import { X, ShieldCheck, Lock, Phone, MessageSquare, Clipboard, Trash2, CheckCircle, RefreshCcw, LogOut, CheckSquare, PlusCircle, Wrench, Image, BookOpen } from "lucide-react";
+import { EstimateRequest, ReviewItem, QnAItem, ServiceItem } from "../types";
+import { WORK_SERVICES } from "../data";
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -10,12 +11,13 @@ interface AdminModalProps {
 export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [password, setPassword] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [activeTab, setActiveTab] = useState<"requests" | "reviews" | "qna">("requests");
+  const [activeTab, setActiveTab] = useState<"requests" | "reviews" | "qna" | "gallery">("requests");
 
   // Local state copy for admin processing
   const [requests, setRequests] = useState<EstimateRequest[]>([]);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [qnas, setQnas] = useState<QnAItem[]>([]);
+  const [workServices, setWorkServices] = useState<ServiceItem[]>([]);
 
   // Filter for requests
   const [requestFilter, setRequestFilter] = useState<"all" | "pending" | "confirmed" | "completed">("all");
@@ -31,6 +33,14 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
   const [selectedQnaId, setSelectedQnaId] = useState<string | null>(null);
   const [qnaAnswerText, setQnaAnswerText] = useState("");
 
+  // Gallery editing state trackers
+  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editBadges, setEditBadges] = useState("");
+  const [editSpecs, setEditSpecs] = useState("");
+
   const loadAllData = () => {
     // 1. Load Requests
     const savedReqs = localStorage.getItem("estimations_detective");
@@ -43,6 +53,19 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
     // 3. Load QnAs
     const savedQnas = localStorage.getItem("qna_detective");
     setQnas(savedQnas ? JSON.parse(savedQnas) : []);
+
+    // 4. Load Work Services
+    const savedServices = localStorage.getItem("work_services_detective");
+    if (savedServices) {
+      try {
+        setWorkServices(JSON.parse(savedServices));
+      } catch (e) {
+        setWorkServices(WORK_SERVICES);
+      }
+    } else {
+      setWorkServices(WORK_SERVICES);
+      localStorage.setItem("work_services_detective", JSON.stringify(WORK_SERVICES));
+    }
   };
 
   useEffect(() => {
@@ -70,6 +93,43 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
 
   const notifyUpdates = () => {
     window.dispatchEvent(new CustomEvent("detective_data_updated"));
+  };
+
+  // ----- Gallery Handlers -----
+  const startEditService = (service: ServiceItem) => {
+    setEditingServiceId(service.id);
+    setEditTitle(service.title);
+    setEditDesc(service.description);
+    setEditImageUrl(service.imageUrl);
+    setEditBadges(service.badges.join(", "));
+    setEditSpecs(service.specs.join("\n"));
+  };
+
+  const handleSaveService = (id: string) => {
+    if (!editTitle.trim() || !editDesc.trim() || !editImageUrl.trim()) {
+      alert("제목, 설명, 이미지 주소 등 핵심 정보는 필수 채워야 합니다.");
+      return;
+    }
+
+    const updated = workServices.map((s) => {
+      if (s.id === id) {
+        return {
+          ...s,
+          title: editTitle.trim(),
+          description: editDesc.trim(),
+          imageUrl: editImageUrl.trim(),
+          badges: editBadges.split(",").map((b) => b.trim()).filter((b) => b.length > 0),
+          specs: editSpecs.split("\n").map((sp) => sp.trim()).filter((sp) => sp.length > 0),
+        };
+      }
+      return s;
+    });
+
+    setWorkServices(updated);
+    localStorage.setItem("work_services_detective", JSON.stringify(updated));
+    setEditingServiceId(null);
+    notifyUpdates();
+    alert("작업 갤러리 해당 항목 정보가 즉각 업데이트/저장 완료되었습니다!");
   };
 
   // ----- Request Handlers -----
@@ -219,6 +279,7 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                 <span>긴급 접수: <strong className="text-red-400 font-bold">{requests.length}건</strong></span>
                 <span>실명 후기: <strong className="text-blue-400 font-bold">{reviews.length}개</strong></span>
                 <span>현장 Q&A: <strong className="text-emerald-400 font-bold">{qnas.length}건</strong></span>
+                <span>작업 갤러리: <strong className="text-amber-400 font-bold">{workServices.length}개</strong></span>
               </div>
               <button
                 onClick={handleLogout}
@@ -233,38 +294,50 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
             <div className="bg-white border-b border-gray-100 flex p-2 gap-1.5 shrink-0 select-none">
               <button
                 onClick={() => setActiveTab("requests")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
                   activeTab === "requests"
                     ? "bg-blue-600 text-white shadow-md shadow-blue-100"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <Phone className="w-4 h-4" />
-                <span>📞 긴급 출동 신청서 ({requests.length})</span>
+                <span>📞 긴급 접수 ({requests.length})</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("reviews")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
                   activeTab === "reviews"
                     ? "bg-blue-600 text-white shadow-md shadow-blue-100"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <MessageSquare className="w-4 h-4" />
-                <span>🗣️ 이용후기 수기관리 ({reviews.length})</span>
+                <span>🗣️ 이용후기 ({reviews.length})</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("qna")}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
                   activeTab === "qna"
                     ? "bg-blue-600 text-white shadow-md shadow-blue-100"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <CheckSquare className="w-4 h-4" />
-                <span>💬 대표직통 Q&A 답변 ({qnas.length})</span>
+                <span>💬 Q&A 답변 ({qnas.length})</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("gallery")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl font-black text-xs sm:text-xs cursor-pointer transition-all ${
+                  activeTab === "gallery"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-100"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <Wrench className="w-4 h-4" />
+                <span>🚧 작업 갤러리 변경 ({workServices.length})</span>
               </button>
             </div>
 
@@ -577,6 +650,160 @@ export default function AdminModal({ isOpen, onClose }: AdminModalProps) {
                             >
                               ✍️ {q.answer ? "대표 답변 수정하기" : "실시간 자문 답변달기"}
                             </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: WORK GALLERY MANAGEMENT */}
+              {activeTab === "gallery" && (
+                <div className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-start gap-3 text-left">
+                    <span className="text-xl">💡</span>
+                    <div>
+                      <h6 className="font-extrabold text-xs sm:text-sm text-blue-900">
+                        작업 갤러리 스마트 콘텐츠 관리
+                      </h6>
+                      <p className="text-[11px] sm:text-xs text-blue-700 font-medium leading-relaxed mt-1">
+                        이곳에서 수정 선언하는 제목, 태그, 소견 및 설명 설명글은 방문객용 메인 화면의 [명탐정 정밀 진단 작업 갤러리]에 즉각 무점검 실시간 반영 처리됩니다!
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {workServices.map((s) => (
+                      <div key={s.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm text-left relative overflow-hidden">
+                        {editingServiceId === s.id ? (
+                          /* Active Edit Form for this specific item */
+                          <div className="space-y-4 animate-scale-up">
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center mb-2">
+                              <span className="text-xs font-bold text-slate-700 bg-slate-200 px-2.5 py-1 rounded">항목 ID: {s.id}</span>
+                              <span className="text-xs text-blue-600 font-extrabold">✏️ 실시간 편집 모드</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-1 font-sans">
+                                <label className="text-[11px] font-black text-slate-700 block">작업 명칭 (제목)</label>
+                                <input
+                                  type="text"
+                                  value={editTitle}
+                                  onChange={(e) => setEditTitle(e.target.value)}
+                                  className="w-full text-xs p-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white font-bold"
+                                  placeholder="예: 싱크대 하수구 완전 소통"
+                                />
+                              </div>
+
+                              <div className="space-y-1 font-sans">
+                                <label className="text-[11px] font-black text-slate-700 block">해시태그 배지 (쉼표 구분)</label>
+                                <input
+                                  type="text"
+                                  value={editBadges}
+                                  onChange={(e) => setEditBadges(e.target.value)}
+                                  className="w-full text-xs p-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white font-medium text-blue-600"
+                                  placeholder="예: 강력통수, 고압스케일, 당일즉시"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="space-y-1 font-sans">
+                              <label className="text-[11px] font-black text-slate-700 block">정밀 진단 현장 이미지 주소 (URL)</label>
+                              <input
+                                type="text"
+                                value={editImageUrl}
+                                onChange={(e) => setEditImageUrl(e.target.value)}
+                                className="w-full text-xs p-2.5 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white font-mono"
+                                placeholder="/src/assets/images/... 혹은 웹 이미지 링크"
+                              />
+                              {editImageUrl && (
+                                <div className="mt-2 text-left">
+                                  <p className="text-[10px] text-slate-400 mb-1">미리보기 (Preview):</p>
+                                  <img src={editImageUrl} alt="preview" className="h-20 w-32 object-cover rounded-lg border border-gray-200" referrerPolicy="no-referrer" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-1 font-sans">
+                              <label className="text-[11px] font-black text-slate-700 block">작업 설명 (소견글)</label>
+                              <textarea
+                                rows={3}
+                                value={editDesc}
+                                onChange={(e) => setEditDesc(e.target.value)}
+                                className="w-full text-xs p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white font-medium leading-relaxed"
+                                placeholder="현장 상태 진단과 해결 방법에 대해서 상세하게 적어 주세요."
+                              />
+                            </div>
+
+                            <div className="space-y-1 font-sans">
+                              <label className="text-[11px] font-black text-slate-700 block">장비 및 상세 시공법 가이드 목록 (줄바꿈 단위로 입력)</label>
+                              <textarea
+                                rows={4}
+                                value={editSpecs}
+                                onChange={(e) => setEditSpecs(e.target.value)}
+                                className="w-full text-xs p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:outline-none bg-white font-mono leading-relaxed"
+                                placeholder="예:&#10;플렉스 샤프트 스케일링 완전 통수&#10;정밀 배관 내시경 실시간 검증&#10;250바 엔진형 초고압 청소"
+                              />
+                            </div>
+
+                            <div className="flex gap-2 justify-end pt-2">
+                              <button
+                                onClick={() => setEditingServiceId(null)}
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold px-4 py-2 rounded-lg"
+                              >
+                                취소
+                              </button>
+                              <button
+                                onClick={() => handleSaveService(s.id)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-5 py-2 rounded-lg shadow-md"
+                              >
+                                💾 이 공종 정보 업데이트 저장
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Read-Only Mode showing existing template information */
+                          <div className="flex flex-col sm:flex-row gap-5 items-start">
+                            <div className="w-full sm:w-40 shrink-0 aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                              <img
+                                src={s.imageUrl}
+                                alt={s.title}
+                                className="w-full h-full object-cover"
+                                referrerPolicy="no-referrer"
+                              />
+                            </div>
+
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between flex-wrap gap-2">
+                                <h6 className="font-extrabold text-sm sm:text-base text-gray-900">{s.title}</h6>
+                                <button
+                                  onClick={() => startEditService(s)}
+                                  className="bg-slate-900 hover:bg-black text-white text-xs font-black px-3.5 py-1.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer"
+                                >
+                                  ✍️ 이 공정 수정하기
+                                </button>
+                              </div>
+
+                              <div className="flex flex-wrap gap-1 font-sans">
+                                {s.badges.map((b, idx) => (
+                                  <span key={idx} className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100">
+                                    #{b}
+                                  </span>
+                                ))}
+                              </div>
+
+                              <p className="text-xs text-gray-600 font-medium leading-relaxed">{s.description}</p>
+
+                              <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-1">
+                                <p className="text-[10px] font-black text-slate-500">🔧 권장 시공법 리스트</p>
+                                <ul className="list-disc list-inside text-[11px] text-gray-600 space-y-0.5 pl-1">
+                                  {s.specs.map((sp, idx) => (
+                                    <li key={idx}>{sp}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
